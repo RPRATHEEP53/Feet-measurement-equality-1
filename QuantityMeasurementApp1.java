@@ -3,85 +3,68 @@ package com.apps.quantitymeasurement;
 import java.util.Objects;
 
 /**
- * UC2: Feet and Inches measurement equality
- * This class handles the validation and comparison of two separate units.
+ * UC4: Extended Unit Support
+ * This class uses an enum-based strategy to handle multiple units
+ * (Feet, Inches, Yards, Centimeters) and their conversion logic.
  */
 public class QuantityMeasurementApp1 {
 
-    // --- Inner Class for Feet ---
-    public static class Feet {
-        private final double value;
+    // --- Enum to handle Unit Conversion Factors ---
+    public enum Unit {
+        FEET(12.0),           // Base unit is Inches (1 Foot = 12 Inches)
+        INCHES(1.0),          // 1 Inch = 1 Inch
+        YARDS(36.0),          // 1 Yard = 3 Feet = 36 Inches
+        CENTIMETERS(0.393701);// 1 cm = 0.393701 Inches
 
-        public Feet(double value) {
+        public final double conversionFactor;
+
+        Unit(double conversionFactor) {
+            this.conversionFactor = conversionFactor;
+        }
+    }
+
+    // --- Generic Quantity Class ---
+    public static class Quantity {
+        private final double value;
+        private final Unit unit;
+
+        public Quantity(double value, Unit unit) {
             this.value = value;
+            this.unit = unit;
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Feet feet = (Feet) o;
-            return Double.compare(feet.value, value) == 0;
+            Quantity that = (Quantity) o;
+
+            // Convert both values to a common base unit (Inches) for comparison
+            double value1InInches = this.value * this.unit.conversionFactor;
+            double value2InInches = that.value * that.unit.conversionFactor;
+
+            // Use a small epsilon for floating point comparison to handle rounding
+            return Math.abs(value1InInches - value2InInches) < 0.01;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(value);
+            return Objects.hash(value, unit);
         }
     }
 
-    // --- Inner Class for Inches ---
-    public static class Inches {
-        private final double value;
-
-        public Inches(double value) {
-            this.value = value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Inches inches = (Inches) o;
-            return Double.compare(inches.value, value) == 0;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
-        }
-    }
-
-    /**
-     * Static method to compare two Feet values as per UC2 Main Flow.
-     */
-    public static boolean compareFeet(double val1, double val2) {
-        Feet f1 = new Feet(val1);
-        Feet f2 = new Feet(val2);
-        return f1.equals(f2);
-    }
-
-    /**
-     * Static method to compare two Inches values as per UC2 Main Flow.
-     */
-    public static boolean compareInches(double val1, double val2) {
-        Inches i1 = new Inches(val1);
-        Inches i2 = new Inches(val2);
-        return i1.equals(i2);
+    // --- Static Comparison Method (Main Flow) ---
+    public static boolean compare(double val1, Unit unit1, double val2, Unit unit2) {
+        Quantity q1 = new Quantity(val1, unit1);
+        Quantity q2 = new Quantity(val2, unit2);
+        return q1.equals(q2);
     }
 
     public static void main(String[] args) {
-        // Output for Feet
-        System.out.println("Input 1.0 ft and 1.0 ft");
-        System.out.println("Output: Equal (" + compareFeet(1.0, 1.0) + ")");
-
-        // Output for Inches
-        System.out.println("\nInput 1.0 in and 1.0 in");
-        System.out.println("Output: Equal (" + compareInches(1.0, 1.0) + ")");
-
-        // Type Safety Check: Comparing Feet object to Inches object
-        Feet feet = new Feet(1.0);
-        Inches inches = new Inches(1.0);
-        System.out.println("\nComparing Feet object to Inches object: " + feet.equals(inches));
+        // Examples from your UC4 requirement sheet
+        System.out.println("1.0 Yard == 3.0 Feet: " + compare(1.0, Unit.YARDS, 3.0, Unit.FEET));
+        System.out.println("1.0 Yard == 36.0 Inches: " + compare(1.0, Unit.YARDS, 36.0, Unit.INCHES));
+        System.out.println("1.0 Foot == 12.0 Inches: " + compare(1.0, Unit.FEET, 12.0, Unit.INCHES));
+        System.out.println("1.0 CM == 0.3937 Inches: " + compare(1.0, Unit.CENTIMETERS, 0.393701, Unit.INCHES));
     }
 }
