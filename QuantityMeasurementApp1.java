@@ -3,60 +3,73 @@ package com.apps.quantitymeasurement;
 import java.util.Objects;
 
 /**
- * UC5: Extended Unit Support with Explicit Conversion
- * Supports Feet, Inches, Yards, and Centimeters.
+ * QuantityMeasurementApp handles equality, conversion, and addition
+ * across different categories (Length and Volume).
  */
-public class QuantityMeasurementApp1 {
+public class QuantityMeasurementApp1
+{
 
-    // --- Enum with Conversion Factors (Base: Inches) ---
-    public enum LengthUnit {
+    // --- Enum for Unit Conversion Factors ---
+    public enum Unit {
+        // Length Units (Base: Inches)
         FEET(12.0),
         INCHES(1.0),
         YARDS(36.0),
-        CENTIMETERS(0.393701);
+        CENTIMETERS(0.393701),
+
+        // Volume Units (Base: Litres)
+        GALLON(3.785),
+        LITRE(1.0),
+        MILLILITRE(0.001);
 
         private final double conversionFactor;
 
-        LengthUnit(double conversionFactor) {
+        Unit(double conversionFactor) {
             this.conversionFactor = conversionFactor;
         }
 
-        // Helper to get value in base unit (Inches)
         public double convertToBase(double value) {
             return value * this.conversionFactor;
         }
     }
 
-    // --- Core Length Class ---
-    public static class Length {
+    // --- Core Quantity Class (Value Object) ---
+    public static class Quantity {
         private final double value;
-        private final LengthUnit unit;
+        private final Unit unit;
 
-        public Length(double value, LengthUnit unit) {
+        public Quantity(double value, Unit unit) {
             this.value = value;
             this.unit = unit;
         }
 
         /**
-         * UC5 Conversion logic:
-         * Converts current length to a target unit.
+         * UC7: Addition Logic
+         * Adds another quantity and returns a NEW Quantity object
+         * in the unit of the first operand.
          */
-        public double convertTo(LengthUnit targetUnit) {
-            double baseValue = this.unit.convertToBase(this.value);
-            return baseValue / targetUnit.conversionFactor;
+        public Quantity add(Quantity that) {
+            if (that == null) throw new IllegalArgumentException("Cannot add null value");
+
+            double totalInBase = this.unit.convertToBase(this.value) +
+                    that.unit.convertToBase(that.value);
+
+            // Convert back to the unit of the first operand
+            double resultValue = totalInBase / this.unit.conversionFactor;
+            return new Quantity(resultValue, this.unit);
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Length other = (Length) o;
+            Quantity quantity = (Quantity) o;
 
-            double firstBase = this.unit.convertToBase(this.value);
-            double secondBase = other.unit.convertToBase(other.value);
+            double v1 = this.unit.convertToBase(this.value);
+            double v2 = quantity.unit.convertToBase(quantity.value);
 
-            // Using Epsilon (0.01) to handle floating point precision
-            return Math.abs(firstBase - secondBase) < 0.01;
+            // Handle precision with epsilon 0.01
+            return Math.abs(v1 - v2) < 0.01;
         }
 
         @Override
@@ -70,29 +83,17 @@ public class QuantityMeasurementApp1 {
         }
     }
 
-    // --- API Methods for demonstrate Conversion and Equality ---
-
-    public static double convert(double value, LengthUnit source, LengthUnit target) {
-        return new Length(value, source).convertTo(target);
-    }
-
-    public static boolean compare(double val1, LengthUnit u1, double val2, LengthUnit u2) {
-        return new Length(val1, u1).equals(new Length(val2, u2));
-    }
-
     public static void main(String[] args) {
-        System.out.println("--- UC5 Conversion Examples ---");
+        System.out.println("--- UC7: Volume Addition Results ---");
 
-        // 1.0 Feet to Inches -> Expected 12.0
-        System.out.println("1.0 Feet in Inches: " + convert(1.0, LengthUnit.FEET, LengthUnit.INCHES));
+        // Example: 1.0 Gallon + 3.785 Litres = 2.0 Gallons
+        Quantity q1 = new Quantity(1.0, Unit.GALLON);
+        Quantity q2 = new Quantity(3.785, Unit.LITRE);
+        System.out.println("1.0 Gal + 3.785 L = " + q1.add(q2));
 
-        // 3.0 Yards to Feet -> Expected 9.0
-        System.out.println("3.0 Yards in Feet: " + convert(3.0, LengthUnit.YARDS, LengthUnit.FEET));
-
-        // 1.0 CM to Inches -> Expected ~0.39
-        System.out.println("1.0 CM in Inches: " + convert(1.0, LengthUnit.CENTIMETERS, LengthUnit.INCHES));
-
-        System.out.println("\n--- Equality Examples ---");
-        System.out.println("1.0 Yard == 36.0 Inches: " + compare(1.0, LengthUnit.YARDS, 36.0, LengthUnit.INCHES));
+        // Example: 1.0 Litre + 1000 Millilitres = 2.0 Litres
+        Quantity q3 = new Quantity(1.0, Unit.LITRE);
+        Quantity q4 = new Quantity(1000.0, Unit.MILLILITRE);
+        System.out.println("1.0 L + 1000 ml = " + q3.add(q4));
     }
 }
